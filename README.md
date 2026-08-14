@@ -1,52 +1,73 @@
 # 摸鱼战机 (dsh-moyu-fighter)
 
-DeepSeek Harness 网页端的小玩具：在对话页**左侧留白区**运行的卷轴弹幕射击游戏。
+一个藏在 DeepSeek Harness 网页端左侧留白区里的卷轴弹幕射击小游戏。
+透明背景、纯黑绘制,平时完全隐形不打扰工作;鼠标一划进来,就是你的摸鱼战场。
 
-- 透明背景、纯黑绘制，不遮挡任何内容
-- 鼠标控制战机（隐藏系统光标，战机即指针），自动开火
-- 弹幕随难度递增：自机狙连射 / 扇形 n-way / 圆环 / 螺旋 / 正弦波浪 / 追踪弹 / 激光
-- 3 条命；鼠标移出区域即退出；**从底部滑出保留分数/生命/难度进度**，下次进入继承
-- 死亡后鼠标停留自动 3 秒倒计时重开
+**特色**
 
-## 安装（给别人的 dsh）
+- **鼠标即战机**:隐藏系统光标,战机精确跟随鼠标、自动开火
+- **弹幕随难度解锁**:自机狙连射、扇形 n-way、圆环、螺旋、正弦波浪、追踪弹、激光
+- **进度可继承**:从区域**底部**滑出即保留分数/生命/难度,回来接着打
+- **死亡自动重开**:GAME OVER 后鼠标停留在区域内,3 秒倒计时自动再战
 
-把 `dsh-moyu-fighter-1.0.0.tgz`（或整个 `dsh-moyu-fighter/` 目录）拷给对方，然后：
+---
 
-```bash
-# 方式一：dsh 官方插件安装命令
-dsh plugin --profile <profile名> add ./dsh-moyu-fighter-1.0.0.tgz
+<!-- 以下内容面向 AI 安装代理:按步骤执行,命令失败时参考"故障排查"。 -->
 
-# 方式二：直接装进 profile 的依赖
-cd <你的 dsh 安装目录>
-pnpm add ./dsh-moyu-fighter-1.0.0.tgz   # 或 npm install ./dsh-moyu-fighter-1.0.0.tgz
-# 并把包名加入 profile 的 dsh.profile.bundles 层列表（如果 dsh plugin add 不可用）
-```
+## 安装说明
 
-**装完后重启该 profile**（客户端名册在进程内缓存，不重启不会出现在 `/plugins/` 列表里）。
+### 产物
 
-> 版本说明：安装命令和 profile 结构可能随 dsh 版本略有出入，请以目标机器 `dsh plugin --help` 为准；
-> 若 `dsh plugin add` 不接受纯客户端包，用方式二手动装进 node_modules 并确保
-> `dsh.client` 清单可被扫描到，同样可行。
+`dsh-moyu-fighter-1.0.0.tgz`(本仓库 Release v1.0.0 的资产,或本地 `npm pack` 生成)。
 
-## 使用
+### 步骤
 
-1. 重启后打开 dsh web 页面（对话界面）
-2. 把鼠标移入左侧留白区并停留 1 秒
-3. 首次会显示说明卡片，点「确认，开始！」；之后每次是 3 秒倒计时自动开战
-4. 鼠标移动即控制战机；移出区域游戏消失（从底部滑出可保留进度）
+1. **确认环境**
+   - 目标机器已安装 dsh,并确认要安装到的 profile 名(默认通常是 `web`,以目标部署配置为准)。
+   - 将 tarball 下载到可写路径,后续命令以 `./dsh-moyu-fighter-1.0.0.tgz` 指代。
 
-## 工作原理
+2. **安装**
 
-- `cordis.patch.yml`：把一行 host 插件插入组合树（host 侧是空壳，见 `lib/index.js`）
-- `package.json` 的 `dsh.client` 清单 + `exports["./client"]`：让浏览器名册
-  （`dsh-client-modules`）扫描到 `lib/client.js`，在页面里作为客户端插件运行
-- `lib/client.js`：`window.__ModuleLoader__.load({ id, factory })` 协议的标准客户端 bundle，
-  注册进 `shell.overlay` 槽位，自动测量左侧留白区域并渲染游戏
+   ```bash
+   dsh plugin --profile <profile名> add ./dsh-moyu-fighter-1.0.0.tgz
+   ```
 
-## 二次开发
+   - 若 `dsh plugin add` 不可用或拒绝该包(纯客户端包),改用:
 
-改 `lib/client.js` 里的常量即可调参（开局停留时长 `HOVER_DELAY`、倒计时 `COUNTDOWN`、
-刷怪间隔、子弹速度系数等），或直接改弹幕逻辑。改完重新 `npm pack` 分发。
+     ```bash
+     cd <dsh 安装目录>
+     pnpm add ./dsh-moyu-fighter-1.0.0.tgz
+     ```
+
+     并把包名 `dsh-moyu-fighter` 加入该 profile 的 `dsh.profile.bundles` 层列表。
+
+3. **重启 profile(必须)**
+   - 客户端名册(`dsh-client-modules`)进程内缓存包元数据,不重启不生效。
+
+4. **验证生效**
+   - dsh 服务启动后,请求 `/plugins/dsh-moyu-fighter/client.js` 应返回 200。
+   - 打开网页对话界面,把鼠标移入左侧留白区并停留 1 秒:应出现说明卡片或倒计时,随后可游玩。
+
+### 使用行为(验收标准)
+
+- 首次进入显示「摸鱼战机」说明卡片,点「确认,开始!」直接开战;之后进入为 3 秒倒计时。
+- 鼠标移动控制战机;移出区域游戏立即消失。
+- 从区域底部滑出退出 → 分数/生命/难度保留,下次进入继承;从上/左/右退出 → 全新一局。
+- 死亡后鼠标停留在区域内 → 自动 3 秒倒计时重开。
+
+### 故障排查
+
+| 现象 | 处理 |
+| --- | --- |
+| 页面无游戏,`/plugins/` 下无该包 | 未重启 profile,或包未进入该 profile 的 node_modules |
+| `dsh plugin add` 报错 | 改用 `pnpm add` + `dsh.profile.bundles` 方式 |
+| 游戏区始终不出现 | 窗口过窄(中间列 < 约 952px 时留白不足,自动隐藏),拉宽窗口 |
+| 命令与版本不符 | 以目标机器 `dsh plugin --help` 和部署 bundle 文档为准 |
+
+### 二次开发 / 调参
+
+- 常量位于 `lib/client.js` 顶部:`HOVER_DELAY`(停留秒数)、`COUNTDOWN`(倒计时秒数)、`EXIT_EDGE`(底部判定容差)、`SCORE_MAP`(敌机分值)、难度系数(`tierOf` 与 `D` 相关公式)。
+- 修改后 `npm pack` 重新分发,或直接替换已安装包内的 `lib/client.js` 并重启 profile。
 
 ## License
 
